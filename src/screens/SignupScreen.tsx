@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
 } from "react-native";
 
+import { supabase } from "../supabase";
+
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AuthStackParamList } from "../navigation/AuthNavigator";
 
@@ -19,13 +21,32 @@ const SignupScreen = ({ navigation }: SignupScreenProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (password !== confirmPassword) {
       Alert.alert("Error", "Passwords do not match!");
       return;
     }
-    Alert.alert("Signup Attempt", `Creating account for ${email}`);
+
+    setLoading(true);
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      Alert.alert("Signup Error", error.message);
+    } else {
+      Alert.alert(
+        "Success!",
+        "Please check your email for a confirmation link to complete your registration."
+      );
+      navigation.navigate("Login");
+    }
   };
 
   return (
@@ -38,6 +59,7 @@ const SignupScreen = ({ navigation }: SignupScreenProps) => {
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
+        editable={!loading}
       />
       <TextInput
         style={styles.input}
@@ -45,6 +67,7 @@ const SignupScreen = ({ navigation }: SignupScreenProps) => {
         value={password}
         onChangeText={setPassword}
         secureTextEntry={true}
+        editable={!loading}
       />
       <TextInput
         style={styles.input}
@@ -52,8 +75,13 @@ const SignupScreen = ({ navigation }: SignupScreenProps) => {
         value={confirmPassword}
         onChangeText={setConfirmPassword}
         secureTextEntry={true}
+        editable={!loading}
       />
-      <Button title="Sign Up" onPress={handleSignup} />
+      <Button
+        title={loading ? "Signing Up..." : "Sign Up"}
+        onPress={handleSignup}
+        disabled={loading}
+      />
       <TouchableOpacity onPress={() => navigation.navigate("Login")}>
         <Text style={styles.linkText}>Already have an account? Login</Text>
       </TouchableOpacity>
